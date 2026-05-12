@@ -32,8 +32,15 @@ export default function CADViewer({ dxfData }) {
 
     setIsAnalyzing(true);
     try {
-      // Convert SVG to PNG via canvas
-      const svgData = new XMLSerializer().serializeToString(svgRef.current);
+      // Ensure SVG has intrinsic dimensions for canvas export
+      const svgElement = svgRef.current;
+      const originalWidth = svgElement.getAttribute('width');
+      const originalHeight = svgElement.getAttribute('height');
+
+      svgElement.setAttribute('width', '800');
+      svgElement.setAttribute('height', '600');
+
+      const svgData = new XMLSerializer().serializeToString(svgElement);
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const img = new Image();
@@ -41,8 +48,8 @@ export default function CADViewer({ dxfData }) {
       const url = URL.createObjectURL(svgBlob);
 
       img.onload = async () => {
-        canvas.width = img.width * 2; // High DPI
-        canvas.height = img.height * 2;
+        canvas.width = 1600; // High resolution
+        canvas.height = 1200;
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -56,6 +63,12 @@ export default function CADViewer({ dxfData }) {
           setAnalysis(response.data.analysis);
           setIsAnalyzing(false);
           URL.revokeObjectURL(url);
+
+          // Restore attributes
+          if (originalWidth) svgElement.setAttribute('width', originalWidth);
+          else svgElement.removeAttribute('width');
+          if (originalHeight) svgElement.setAttribute('height', originalHeight);
+          else svgElement.removeAttribute('height');
         });
       };
       img.src = url;
@@ -88,7 +101,6 @@ export default function CADViewer({ dxfData }) {
           />
         );
       }
-      // Add more entity types as needed
       return null;
     });
   };
@@ -111,7 +123,7 @@ export default function CADViewer({ dxfData }) {
           <TransformComponent wrapperClass="w-full h-full">
             <svg
               ref={svgRef}
-              viewBox="-100 -100 500 500" // Should be dynamic based on bounds
+              viewBox="-100 -100 500 500"
               className="w-full h-full text-slate-900 dark:text-blue-400"
               style={{ minWidth: '800px', minHeight: '600px' }}
             >

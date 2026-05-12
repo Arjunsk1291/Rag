@@ -12,10 +12,16 @@ router.post('/', async (req, res) => {
     const lastMessage = messages[messages.length - 1].content;
     const queryEmbedding = await embed(lastMessage);
 
-    let searchResults = vectorStore.search(queryEmbedding);
+    // Perform search
+    let searchResults = vectorStore.search(queryEmbedding, 20); // Get more candidates to ensure we have enough after filtering
+
+    // Filter by active document if provided
     if (activeDocId) {
       searchResults = searchResults.filter(r => r.docId === activeDocId);
     }
+
+    // Take top 5 after potential filtering
+    searchResults = searchResults.slice(0, 5);
 
     const context = searchResults.map(r => `[Source: ${r.metadata.filename}] ${r.text}`).join('\n\n');
 
